@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Упс. Что-то не так.{% endblock %}
+{% block content %}
+  <h1 align="center">Упсccc. Что-то не так.</h1>
+  <p align="center">Страницы с адресом {{ path }} не существует</p>
+  <a href="{% url 'posts:index' %}"> Вернуться на главную</a>
+{% endblock %}
