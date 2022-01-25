@@ -1,4 +1,7 @@
-from xml.etree.ElementTree import Comment
+import shutil
+import tempfile
+from django.core.cache import cache
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -6,6 +9,8 @@ from django import forms
 
 from posts.models import Post, Group, Comment
 
+
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 User = get_user_model()
 
 
@@ -28,10 +33,16 @@ class PostViewTest(TestCase):
             author=cls.user,
             text="Тестовый текст1",
             group=cls.group_1,
+            image="gif.jpg",
         )
         cls.comment = Comment.objects.create(
             post=cls.post_1, text="Комментарий", author=cls.user
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.guest_client = Client()
@@ -66,7 +77,9 @@ class PostViewTest(TestCase):
         response = self.guest_client.get(reverse("posts:index"))
         first_object = response.context["page_obj"][0]
         post_text = first_object.text
+        post_image = first_object.image
         self.assertEqual(post_text, "Тестовый текст1")
+        self.assertEqual(post_image, "gif.jpg")
 
     def test_group_page_show_correct_context(self):
         """Шаблон страницы групп показывает правильный контекст."""
@@ -76,8 +89,10 @@ class PostViewTest(TestCase):
         first_object = response.context["page_obj"][0]
         post_group = first_object.group
         post_text = first_object.text
+        post_image = first_object.image
         self.assertEqual(post_text, "Тестовый текст1")
         self.assertEqual(post_group, self.group_1)
+        self.assertEqual(post_image, "gif.jpg")
 
     def test_profile_page_show_correct_context(self):
         """Шаблон страницы профиля показывает правильный контекст."""
@@ -87,8 +102,10 @@ class PostViewTest(TestCase):
         first_object = response.context["page_obj"][0]
         post_author = first_object.author
         post_text = first_object.text
+        post_image = first_object.image
         self.assertEqual(post_author, self.user)
         self.assertEqual(post_text, "Тестовый текст1")
+        self.assertEqual(post_image, "gif.jpg")
 
     def test_post_detail_show_correct_context(self):
         """Шаблон страницы поста показывает правильный контекст."""
@@ -98,6 +115,7 @@ class PostViewTest(TestCase):
             )
         )
         self.assertEqual(response.context["posts"].pk, PostViewTest.post_1.pk)
+        self.assertEqual(response.context["posts"].image, "gif.jpg")
 
     def test_post_create_show_correct_context(self):
         """Шаблон создания поста сформирован с правильным контекстом."""
@@ -105,6 +123,7 @@ class PostViewTest(TestCase):
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.fields.ChoiceField,
+            "image": forms.fields.ImageField,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -121,6 +140,7 @@ class PostViewTest(TestCase):
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.fields.ChoiceField,
+            "image": forms.fields.ImageField,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
@@ -136,10 +156,17 @@ class PostViewTest(TestCase):
         )
         self.assertEqual(len(response.context["comments"]), 1)
 
-    def test_cache(self):
-        """Проверка кэша на главной странице."""
-        response = self.guest_client.get(reverse("posts:index"))
-        self.assertEqual(len(response.context["page_obj"]), 1)
+    def test_z_cache_home_page(self):
+        """Тестируем удаление одной записи и отображение кеша"""
+        response_predelete = self.guest_client.get(reverse("posts:index"))
+        Post.objects.filter(pk=PostViewTest.post_1.pk).delete()
+        response_deleted = self.guest_client.get(reverse("posts:index"))
+        content_deleted = response_deleted.content
+        self.assertEqual(response_predelete.content, content_deleted)
+        cache.clear()
+        response_cached = self.guest_client.get(reverse("posts:index"))
+        content_cached = response_cached.content
+        self.assertNotEqual(content_deleted, content_cached)
 
 
 class PaginatorViewsTest(TestCase):

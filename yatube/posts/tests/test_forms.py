@@ -21,7 +21,6 @@ class PostCreateFormTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text="Тестовый текст1",
-            pk=220,
         )
         cls.group_1 = Group.objects.create(
             title="Тестовая группа",
@@ -90,12 +89,19 @@ class PostCreateFormTests(TestCase):
             "image": uploaded,
         }
         response = self.authorized_client.post(
-            reverse("posts:post_edit", kwargs={"post_id": 220}),
+            reverse(
+                "posts:post_edit",
+                kwargs={"post_id": PostCreateFormTests.post.pk},
+            ),
             data=form_data,
             follow=True,
         )
         self.assertRedirects(
-            response, reverse("posts:post_detail", kwargs={"post_id": 220})
+            response,
+            reverse(
+                "posts:post_detail",
+                kwargs={"post_id": PostCreateFormTests.post.pk},
+            ),
         )
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(
