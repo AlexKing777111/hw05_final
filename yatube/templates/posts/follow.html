@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% load cache %}
 {% load thumbnail %}
-{% block title %}Последние обновления{% endblock %}
+{% block title %}Избранные авторы{% endblock %}
   {% block content %}
-  {% cache 20 page_index page_obj.number %}
   {% include 'posts/includes/switcher.html' %}
   <div class="container py-5">  
-    <h1> Последние обновления на сайте </h1>
+    <h1>Избранные авторы</h1>
+    {%if page_obj%}
       {% for post in page_obj %}
         <article>
           {% include 'includes/post_feed_card.html' %}
@@ -26,6 +26,8 @@
         {% if not forloop.last %}<hr>{% endif %}
       {% endfor %}
       {% include 'posts/includes/paginator.html' %}
+    {% else %}
+      <p>Нет активных подписок</p>
+    {%endif%}
     </div>
-  {% endcache %}
   {% endblock %}

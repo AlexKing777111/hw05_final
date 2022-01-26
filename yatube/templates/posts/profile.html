@@ -5,6 +5,7 @@
 <div class="container py-5">    
   <h1>Все посты пользователя {{ author.get_full_name }}</h1>
   <h3>Всего постов: {{ posts.count }} </h3>
+  {% include 'posts/includes/follow_button.html' %}
     {% for post in page_obj %}
       <article>
         <ul>
