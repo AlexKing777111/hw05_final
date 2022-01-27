@@ -7,7 +7,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from posts.models import Post, Group, Comment
+from posts.models import Post, Group, Comment, Follow
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -19,6 +19,7 @@ class PostViewTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username="Stas")
+        cls.user1 = User.objects.create(username="Test_user1")
         cls.group_1 = Group.objects.create(
             title="Тестовая группа",
             slug="test-slug",
@@ -38,6 +39,7 @@ class PostViewTest(TestCase):
         cls.comment = Comment.objects.create(
             post=cls.post_1, text="Комментарий", author=cls.user
         )
+        Follow.objects.create(user=cls.user1, author=cls.user)
 
     @classmethod
     def tearDownClass(cls):
@@ -47,7 +49,9 @@ class PostViewTest(TestCase):
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
+        self.authorized_client1 = Client()
         self.authorized_client.force_login(PostViewTest.user)
+        self.authorized_client1.force_login(PostViewTest.user1)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон views."""
@@ -156,7 +160,7 @@ class PostViewTest(TestCase):
         )
         self.assertEqual(len(response.context["comments"]), 1)
 
-    def test_z_cache_home_page(self):
+    def test_cache_home_page(self):
         """Тестируем удаление одной записи и отображение кеша"""
         response_predelete = self.guest_client.get(reverse("posts:index"))
         Post.objects.filter(pk=PostViewTest.post_1.pk).delete()
@@ -167,6 +171,36 @@ class PostViewTest(TestCase):
         response_cached = self.guest_client.get(reverse("posts:index"))
         content_cached = response_cached.content
         self.assertNotEqual(content_deleted, content_cached)
+
+    def test_following(self):
+        """Тестирование подписок."""
+        self.authorized_client1.get(
+            reverse("posts:profile_follow", kwargs={"username": "Stas"})
+        )
+        self.assertTrue(
+            Follow.objects.filter(author=self.user, user=self.user1).exists(),
+            "Не удалось подписаться",
+        )
+
+    def test_unfollow(self):
+        self.authorized_client1.get(
+            reverse("posts:profile_unfollow", kwargs={"username": "Stas"})
+        )
+        self.assertFalse(
+            Follow.objects.filter(author=self.user, user=self.user1).exists(),
+            "Не удалось отписаться",
+        )
+
+    def test_new_post_in_followings(self):
+        """Проверка добавления поста на странице подписок."""
+        response = self.authorized_client1.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response.context["page_obj"]), 1)
+        response = self.authorized_client.get(reverse("posts:post_create"))
+        Post.objects.create(author=PostViewTest.user, text="Новый пост")
+        response = self.authorized_client1.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response.context["page_obj"]), 2)
+        response = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response.context["page_obj"]), 0)
 
 
 class PaginatorViewsTest(TestCase):
