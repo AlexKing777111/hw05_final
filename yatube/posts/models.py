@@ -18,7 +18,7 @@ class Group(models.Model):
         verbose_name = "Сообщество"
         verbose_name_plural = "Сообщества"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.title
 
 
@@ -45,13 +45,13 @@ class Post(models.Model):
     )
     image = models.ImageField("Картинка", upload_to="posts/", blank=True)
 
-    def __str__(self):
-        return self.text
-
     class Meta:
         ordering = ["-pub_date"]
         verbose_name = "Пост"
         verbose_name_plural = "Посты"
+
+    def __str__(self):
+        return self.text
 
 
 class Comment(models.Model):
@@ -74,13 +74,13 @@ class Comment(models.Model):
         auto_now_add=True, verbose_name="Дата публикации"
     )
 
-    def __str__(self):
-        return self.text
-
     class Meta:
         verbose_name = "Комментарий"
         verbose_name_plural = "Комментарии"
         ordering = ("-created",)
+
+    def __str__(self):
+        return self.text
 
 
 class Follow(models.Model):

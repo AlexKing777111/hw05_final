@@ -1,13 +1,9 @@
 from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from .models import Post, Group, Comment, Follow
-from django.contrib.auth import get_user_model
+from .models import Post, Group, Comment, Follow, User
 from .forms import PostForm, CommentForm
 from django.conf import settings
-
-
-User = get_user_model()
 
 
 def index(request):
@@ -43,12 +39,10 @@ def profile(request, username):
     paginator = Paginator(posts, settings.PER_PAGE_COUNT)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(
-            author=author, user=request.user
-        ).exists()
-    else:
-        following = False
+    following = (
+        request.user.is_authenticated
+        and Follow.objects.filter(user=request.user, author=author).exists()
+    )
     context = {
         "posts": posts,
         "page_obj": page_obj,
@@ -76,13 +70,12 @@ def post_detail(request, post_id):
 def post_create(request):
     template = "posts/post_create.html"
     group_choice = Group.objects.all().order_by("title")
-    if request.method == "POST":
-        form = PostForm(request.POST, files=request.FILES or None)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            return redirect("posts:profile", username=post.author)
+    form = PostForm(request.POST or None, files=request.FILES or None)
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect("posts:profile", username=post.author)
     else:
         form = PostForm()
     context = {
