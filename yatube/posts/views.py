@@ -76,8 +76,6 @@ def post_create(request):
         post.author = request.user
         post.save()
         return redirect("posts:profile", username=post.author)
-    else:
-        form = PostForm()
     context = {
         "form": form,
         "group_choice": group_choice,
