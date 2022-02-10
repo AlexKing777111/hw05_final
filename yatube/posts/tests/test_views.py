@@ -18,7 +18,7 @@ class PostViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username="Stas")
+        cls.user = User.objects.create(username="Stas")
         cls.user1 = User.objects.create(username="Test_user1")
         cls.group_1 = Group.objects.create(
             title="Тестовая группа",
@@ -201,6 +201,17 @@ class PostViewTest(TestCase):
         self.assertEqual(len(response.context["page_obj"]), 2)
         response = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response.context["page_obj"]), 0)
+
+    def test_post_delete(self):
+        """Тестируем удаление одной записи."""
+        self.authorized_client.get(
+            reverse(
+                "posts:post_delete", kwargs={"post_id": PostViewTest.post_1.pk}
+            )
+        )
+        Post.objects.filter(pk=PostViewTest.post_1.pk).delete()
+        count = Post.objects.all().count()
+        self.assertEqual(count, 0)
 
 
 class PaginatorViewsTest(TestCase):

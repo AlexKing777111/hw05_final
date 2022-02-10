@@ -17,6 +17,7 @@ urlpatterns = [
         views.profile_unfollow,
         name="profile_unfollow",
     ),
+    path("posts/<post_id>/delete/", views.post_delete, name="post_delete"),
     path("posts/<post_id>/comment/", views.add_comment, name="add_comment"),
     path("group/<slug:slug>/", views.group_posts, name="group_posts"),
     path("profile/<str:username>/", views.profile, name="profile"),

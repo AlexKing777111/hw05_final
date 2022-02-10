@@ -22,7 +22,7 @@
       </li>
       <li class="list-group-item">
         <a href="{% url 'posts:profile' posts.author %}">
-          все посты пользователя
+          Все посты пользователя
         </a>
       </li>
       <li class="list-group-item">
@@ -30,6 +30,11 @@
           Редактировать запись
         </a>
       </li>
+      {% if posts.author == user %}
+        <a href="{% url 'posts:post_delete' posts.pk %}">
+          <button type="button" class="btn btn-danger btn-lg btn-block">Удалить запись</button>
+        </a>
+      {% endif %}
     </ul>
     </aside>
     <article class="col-12 col-md-9">

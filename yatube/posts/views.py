@@ -142,3 +142,11 @@ def profile_unfollow(request, username):
     user = User(request.user.id)
     Follow.objects.filter(user=user, author=author).delete()
     return redirect("posts:profile", username)
+
+
+@login_required
+def post_delete(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    if post.author == request.user:
+        Post.objects.filter(pk=post_id).delete()
+    return redirect("posts:index")
