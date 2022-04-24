@@ -1,3 +1,3 @@
-# hw05_final
-
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+### Проект социальной сети для авторов.
+#### Возможность регистрации, публикации постов, подписки на авторов, омтавления комментариев к постам, вступления в группы.
+Посещение [Социальная сеть для авторов](http://alexking.pythonanywhere.com/).
